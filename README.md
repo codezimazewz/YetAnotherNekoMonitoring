@@ -73,7 +73,7 @@
 
 - Docker >= 20.10 (check w/ *docker -v*)
 - Docker Compose >= 2.0  (check /w *docker compose version*)
-- Minimum 4GB RAM, 2 CPU cores
+- Minimum 6GB RAM, 2 CPU cores
 - Minimum 20GB free disk space (for metrics and logs)
 
 ### Installation and Launch
