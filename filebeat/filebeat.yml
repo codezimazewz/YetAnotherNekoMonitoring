@@ -1,0 +1,15 @@
+filebeat.inputs:
+  - type: container
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    processors:
+      - add_docker_metadata: ~
+      - add_fields:
+          target: ""
+          fields:
+            source: docker
+
+output.gelf:
+  host: "graylog:12201"
+  protocol: "udp"
+  compression_level: 3

@@ -1,0 +1,16 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: "default"
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+
+receivers:
+  - name: "default"
+    # Update this receiver to your preferred notification channel.
+    # e.g. email_configs, slack_configs, webhook_configs.
+    webhook_configs:
+      - url: "http://localhost:5001/"
+        send_resolved: true

@@ -1,0 +1,154 @@
+name: yetanothernekomonitoring
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert-rules.yml:/etc/prometheus/alert.rules.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle
+      - --web.enable-admin-api
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager/config.yml:/etc/alertmanager/config.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/config.yml
+    ports:
+      - "9093:9093"
+    networks:
+      - monitoring
+
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - monitoring
+
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es-data:/usr/share/opensearch/data
+    networks:
+      - monitoring
+
+  graylog:
+    image: graylog/graylog:5.0
+    container_name: graylog
+    environment:
+      - GRAYLOG_PASSWORD_SECRET=mkVQgnrRx0oyEJUbZs2SjA==
+      - GRAYLOG_ROOT_PASSWORD_SHA2=8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
+      - GRAYLOG_HTTP_EXTERNAL_URI=http://localhost:9000/
+      - GRAYLOG_HTTP_BIND_ADDRESS=0.0.0.0:9000
+      - GRAYLOG_MONGODB_URI=mongodb://mongodb/graylog
+      - GRAYLOG_ELASTICSEARCH_HOSTS=http://opensearch:9200
+    depends_on:
+      - mongodb
+      - opensearch
+    ports:
+      - "9000:9000"
+      - "12201:12201/udp"
+    volumes:
+      - graylog-data:/usr/share/graylog/data
+    networks:
+      - monitoring
+
+  graylog-init:
+    image: curlimages/curl:latest
+    container_name: graylog-init
+    depends_on:
+      - graylog
+    command: ["sh", "-c", "set -e; echo \"Waiting for Graylog API to be available...\"; until curl -sSf -u admin:admin http://graylog:9000/api/system | grep -q \"server_id\"; do sleep 2; done; echo \"Creating GELF UDP input...\"; curl -s -u admin:admin -H \"Content-Type: application/json\" -X POST -d '{\"title\":\"GELF UDP\",\"type\":\"org.graylog2.inputs.gelf.udp.GELFUDPInput\",\"global\":true,\"configuration\":{\"bind_address\":\"0.0.0.0\",\"port\":12201,\"recv_buffer_size\":262144,\"tcp_keepalive\":true}}' http://graylog:9000/api/system/inputs; echo \"Graylog input created.\";"]
+    networks:
+      - monitoring
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.10.0
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - graylog
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    pid: "host"
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - monitoring
+
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  grafana-data:
+  mongo-data:
+  es-data:
+  graylog-data:

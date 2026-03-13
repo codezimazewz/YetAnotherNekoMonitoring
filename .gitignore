@@ -1,0 +1,10 @@
+# Docker artifacts
+**/grafana-data/
+**/loki-data/
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
