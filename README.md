@@ -30,31 +30,6 @@
 - **Auto-configuration**: All services start with minimal configuration
 - **Scalability**: Easily extensible for new services
 
-## 🏗 Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Node Exporter │    │     cAdvisor    │    │   Prometheus    │
-│   (system       │    │  (containers)   │    │  (metrics       │
-│    metrics)     │────┼─────────────────┼────│   collection)   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                                       │
-                                                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│    Filebeat     │    │     Graylog     │    │   OpenSearch    │
-│ (log collection │────┼─────────────────┼────│  (log indexing  │
-│ from containers)│    │(log aggregation)|    │    engine)      │
-└─────────────────┘    │                 │    └─────────────────┘
-                       └─────────────────┘             │
-                               │                       │
-                               ▼                       ▼
-                       ┌─────────────────┐    ┌─────────────────┐
-                       │  Alertmanager   │    │     Grafana     │
-                       │ (notifications) │    │ (dashboards +   │
-                       │                 │    │  visualization) │
-                       └─────────────────┘    └─────────────────┘
-```
-
 ### Components
 
 - **Prometheus**: Metrics collection and storage
