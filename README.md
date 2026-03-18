@@ -59,10 +59,12 @@
    cd YetAnotherNekoMonitoring
    ```
 
-2. **Copy the example env file:**
+2. **Copy the example env file and set secrets:**
    ```bash
    cp .env.example .env
    # Edit .env to set passwords and secrets
+   # Generate SHA-256 for Graylog root password:
+   # echo -n "your-strong-password" | sha256sum
    ```
 
 3. **Start the stack:**
@@ -77,24 +79,25 @@
    docker compose ps
    ```
 
-All services will start automatically with ready configuration. 
+All services will start automatically with ready configuration.
 
 ## 🐾 Post-Installation
 The stack starts in "Vanilla Mode". To get the graphs purring:
 
-1. **Grafana**: Login (`admin/admin`) -> Data Sources -> Add Prometheus (`http://prometheus:9090`).
-2. **Dashboards**: Import ID `1860` for System metrics or any other
-3. **Graylog**: Create a "GELF UDP" Input on port `12201` to start seeing logs.
-4. **Verify**: Visit Prometheus and make sure all targets are UP
+1. **Grafana**: Login with `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` from `.env`.
+2. **Data source**: Prometheus datasource is provisioned automatically (`http://prometheus:9090`).
+3. **Dashboards**: Node Exporter dashboard is provisioned from `grafana/dashboards/`.
+4. **Graylog**: GELF UDP input on `12201/udp` is created automatically by `graylog-init`.
+5. **Verify**: Visit Prometheus and make sure all targets are UP.
 
 ## 🌐 Access to Services
 After launch, the stack is available at the following addresses:
 
 | Service       | URL                          | Login/Password     | Description |
 |---------------|------------------------------|--------------------|-------------|
-| **Grafana**   | http://localhost:3000        | admin/admin       | Dashboards and visualization |
+| **Grafana**   | http://localhost:3000        | from `.env` (`GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD`) | Dashboards and visualization |
 | **Prometheus**| http://localhost:9090        | -                 | Metrics and alerts |
-| **Graylog**   | http://localhost:9000        | admin/admin       | Logs and search |
+| **Graylog**   | http://localhost:9000        | from `.env` (`GRAYLOG_ADMIN_USER` / `GRAYLOG_ROOT_PASSWORD_PLAIN`) | Logs and search |
 | **Alertmanager**| http://localhost:9093      | -                 | Alert management |
 | **cAdvisor**  | http://localhost:8080        | -                 | Container metrics |
 | **Node Exporter**| http://localhost:9100     | -                 | System metrics |
@@ -132,6 +135,7 @@ After configuring a webhook in `alertmanager/config.yml`, you can send alerts to
 ### Main Files
 
 - `docker-compose.yml`: Service definitions
+- `.env` (from `.env.example`): Credentials and secrets
 - `prometheus/prometheus.yml`: Metrics collection config
 - `prometheus/alert-rules.yml`: Alert rules
 - `alertmanager/config.yml`: Notification settings
@@ -151,6 +155,11 @@ After configuring a webhook in `alertmanager/config.yml`, you can send alerts to
 3. **Additional alerts:**
    - Edit `prometheus/alert-rules.yml`
    - Reload rules: `curl -X POST http://localhost:9090/-/reload`
+
+4. **Passwords/secrets rotation:**
+   - Update values in `.env`
+   - Ensure `GRAYLOG_ROOT_PASSWORD_SHA2` matches `GRAYLOG_ROOT_PASSWORD_PLAIN`
+   - Restart affected services: `docker compose up -d`
 
 ## 🔧 Extending
 
