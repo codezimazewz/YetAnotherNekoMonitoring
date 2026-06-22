@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://media1.tenor.com/m/m65_yUALT48AAAAC/anime-nekopara.gif" width="350" height="350" alt="Cute Cat">
+  <img src="https://media1.tenor.com/m/m65_yUALT48AAAAC/anime-nekopara.gif" width="480" height="350" alt="Cute Cat">
 </div>
 
 <h1 align="center">YetAnotherNekoMonitoring ( ^..^)ﾉ</h1>
